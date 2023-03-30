@@ -18,4 +18,3 @@ def canUnlockAll(boxes):
             opened_boxes.add(box_key)
 
     return n == len(opened_boxes)
-       
