@@ -1,25 +1,42 @@
 #!/usr/bin/node
 const request = require('request');
-const API_URL = 'https://swapi-api.hbtn.io/api';
 
-if (process.argv.length > 2) {
-  request(`${API_URL}/films/${process.argv[2]}/`, (err, _, body) => {
-    if (err) {
-      console.log(err);
-    }
-    const charactersURL = JSON.parse(body).characters;
-    const charactersName = charactersURL.map(
-      url => new Promise((resolve, reject) => {
-        request(url, (promiseErr, __, charactersReqBody) => {
-          if (promiseErr) {
-            reject(promiseErr);
-          }
-          resolve(JSON.parse(charactersReqBody).name);
-        });
-      }));
-
-    Promise.all(charactersName)
-      .then(names => console.log(names.join('\n')))
-      .catch(allErr => console.log(allErr));
-  });
+if (process.argv.length !== 3) {
+  console.log('Usage: ./characters.js <movie_id>');
+  process.exit(1);
 }
+
+const movieId = process.argv[2];
+const url = `https://swapi.dev/api/films/${movieId}`;
+
+request(url, function (error, response, body) {
+  if (error) {
+    console.error(error);
+    process.exit(1);
+  }
+
+  if (response.statusCode !== 200) {
+    console.error(`Unexpected status code: ${response.statusCode}`);
+    process.exit(1);
+  }
+
+  const movie = JSON.parse(body);
+  const characters = movie.characters;
+
+  characters.forEach((characterUrl) => {
+    request(characterUrl, function (error, response, body) {
+      if (error) {
+        console.error(error);
+        process.exit(1);
+      }
+
+      if (response.statusCode !== 200) {
+        console.error(`Unexpected status code: ${response.statusCode}`);
+        process.exit(1);
+      }
+
+      const character = JSON.parse(body);
+      console.log(character.name);
+    });
+  });
+});
